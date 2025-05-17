@@ -8,6 +8,10 @@ const readingListToggleButton = document.getElementById(
 const buttonTextSpan = readingListToggleButton.querySelector("span");
 const buttonIcon = document.getElementById("button-icon");
 
+const openReadingListButton = document.getElementById(
+  "open-reading-list-button"
+);
+
 function sendMessage(message) {
   browser.tabs.sendMessage(currentTab.id, {
     currentTab,
@@ -19,6 +23,12 @@ function listenForClicks() {
   readingListToggleButton.addEventListener("click", (_event) => {
     toggleBookmark();
     getCurrentTab().then(otherSendMessage);
+  });
+
+  openReadingListButton.addEventListener("click", (_event) => {
+    browser.tabs.create({
+      url: "/list-page/index.html",
+    });
   });
 }
 
