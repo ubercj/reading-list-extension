@@ -1,4 +1,4 @@
-# bookmark-it
+# Reading List
 
 ## What it does
 
