@@ -11,10 +11,12 @@
 
   console.log("content script is running");
 
+  function logMessage(message) {
+    console.log("content script received message: %j", message);
+  }
+
   /**
    * Listen for messages from the background script.
    */
-  browser.runtime.onMessage.addListener((message) => {
-    console.log("content script received message: %j", message);
-  });
+  browser.runtime.onMessage.addListener(logMessage);
 })();

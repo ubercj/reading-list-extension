@@ -8,19 +8,18 @@ const readingListToggleButton = document.getElementById(
 const buttonTextSpan = readingListToggleButton.querySelector("span");
 const buttonIcon = document.getElementById("button-icon");
 
-function listenForClicks() {
-  console.log("listenForClicks");
-  readingListToggleButton.addEventListener("click", (event) => {
-    console.log("button clicked");
-    toggleBookmark();
+function sendMessage(message) {
+  browser.tabs.sendMessage(currentTab.id, {
+    currentTab,
+    message,
   });
 }
 
-/**
- * Just log the error to the console.
- */
-function reportError(error) {
-  console.error(`Could not add to reading list: ${error}`);
+function listenForClicks() {
+  readingListToggleButton.addEventListener("click", (_event) => {
+    toggleBookmark();
+    getCurrentTab().then(otherSendMessage);
+  });
 }
 
 /**
@@ -42,20 +41,48 @@ function reportExecuteScriptError(error) {
  */
 browser.tabs
   .executeScript({ file: "/content_scripts/reading-list-content-script.js" })
+  .then(lookForReadingListFolder)
   .then(listenForClicks)
   .catch(reportExecuteScriptError);
 
-/**
- * OG script
- */
+function lookForReadingListFolder() {
+  browser.bookmarks.getTree().then((tree) => {
+    const rootTree = tree[0];
+    const otherBookmarksFolder = rootTree.children.find(
+      (child) => child.title === "Other Bookmarks"
+    );
+
+    if (!otherBookmarksFolder) {
+      sendMessage("Could not find expected root folder.");
+      return;
+    }
+
+    const existingReadingListFolder = otherBookmarksFolder.children.find(
+      (child) => child.title === "Reading List"
+    );
+
+    if (existingReadingListFolder) {
+      readingListFolderId = existingReadingListFolder.id;
+      sendMessage(
+        `Reading List folder already exists. ID: ${readingListFolderId}`
+      );
+    } else {
+      createReadingListFolder().then((folder) => {
+        readingListFolderId = folder.id;
+        sendMessage(`Reading List folder created. ID: ${readingListFolderId}`);
+      });
+    }
+  });
+}
 
 let currentTab;
 let currentBookmark;
+let readingListFolderId;
 
 /*
  * Updates the button text and icon based on whether the current page has already been added to the reading list
  */
-function updateIcon() {
+function updateButton() {
   const buttonText = currentBookmark
     ? "Remove from reading list"
     : "Add to reading list";
@@ -67,19 +94,25 @@ function updateIcon() {
   buttonIcon.src = iconImage;
 }
 
-function createReadingListFolder() {
-  browser.bookmarks.create({ type: "folder", title: "Reading List" });
+async function createReadingListFolder() {
+  return browser.bookmarks.create({
+    type: "folder",
+    title: "Reading List",
+  });
 }
 
 /*
  * Add or remove the bookmark on the current page.
  */
 function toggleBookmark() {
-  console.log("Current Tab: %j", currentTab);
   if (currentBookmark) {
     browser.bookmarks.remove(currentBookmark.id);
   } else {
-    browser.bookmarks.create({ title: currentTab.title, url: currentTab.url });
+    browser.bookmarks.create({
+      parentId: readingListFolderId,
+      title: currentTab.title,
+      url: currentTab.url,
+    });
   }
 }
 
@@ -101,7 +134,7 @@ function updateAddonStateForActiveTab(tabs) {
         let searching = browser.bookmarks.search({ url: currentTab.url });
         searching.then((bookmarks) => {
           currentBookmark = bookmarks[0];
-          updateIcon();
+          updateButton();
         });
       } else {
         console.log(
@@ -111,11 +144,11 @@ function updateAddonStateForActiveTab(tabs) {
     }
   }
 
-  let gettingActiveTab = browser.tabs.query({
-    active: true,
-    currentWindow: true,
-  });
-  gettingActiveTab.then(updateTab);
+  getCurrentTab().then(updateTab);
+}
+
+async function getCurrentTab() {
+  return browser.tabs.query({ active: true, currentWindow: true });
 }
 
 // listen for bookmarks being created
