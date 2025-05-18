@@ -52,7 +52,7 @@ async function getLinksFromFolder(folder) {
  * @param {string} message
  */
 function createErrorMessage(message) {
-  linksContainer.innerHTML = message;
+  linksContainer.textContent = message;
 }
 
 async function setup() {
@@ -132,7 +132,8 @@ function removeLink(index) {
  */
 function buildReadingList() {
   if (!linksList?.length) {
-    linksContainer.innerHTML = "Your reading list is empty";
+    Array.from(linksContainer.children).forEach((child) => child.remove());
+    linksContainer.textContent = "Your reading list is empty";
     return;
   }
 
@@ -155,7 +156,7 @@ function buildReadingList() {
     listEl.appendChild(listItemEl);
   });
 
-  linksContainer.innerHTML = "";
+  linksContainer.textContent = "";
   linksContainer.appendChild(listEl);
 }
 

@@ -6,9 +6,6 @@ body {
   font-size: 16px;
 }
 
-.hidden {
-  display: none;
-}
 
 #popup-content {
   display: grid;
@@ -20,4 +17,9 @@ body {
   align-items: center;
   gap: 4px;
   padding: 4px;
+}
+
+.hidden,
+#popup-content.hidden {
+  display: none;
 }

@@ -3,8 +3,7 @@
   "name": "Reading List",
   "version": "1.0",
   "description": "Add or remove pages to your reading list",
-  "default_title": "Reading List",
-  "default_area": "navbar",
+
   "icons": {
     "48": "icons/bookmark-it.png",
     "96": "icons/bookmark-it@2x.png"
@@ -13,8 +12,9 @@
   "permissions": ["bookmarks", "activeTab", "tabs"],
 
   "browser_action": {
-    "default_icon": "icons/star-empty-38.png",
     "default_title": "Reading List",
+    "default_area": "navbar",
+    "default_icon": "icons/star-empty-38.png",
     "default_popup": "popup/index.html"
   },
 
