@@ -9,7 +9,7 @@
   }
   window.hasRun = true;
 
-  console.log("content script is running");
+  console.log("Reading List extension is running.");
 
   function logMessage(message) {
     console.log("content script received message: %j", message);

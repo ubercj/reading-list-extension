@@ -22,7 +22,6 @@ function sendMessage(message) {
 function listenForClicks() {
   readingListToggleButton.addEventListener("click", (_event) => {
     toggleBookmark();
-    getCurrentTab().then(otherSendMessage);
   });
 
   openReadingListButton.addEventListener("click", (_event) => {
@@ -73,13 +72,9 @@ function lookForReadingListFolder() {
 
     if (existingReadingListFolder) {
       readingListFolderId = existingReadingListFolder.id;
-      sendMessage(
-        `Reading List folder already exists. ID: ${readingListFolderId}`
-      );
     } else {
       createReadingListFolder().then((folder) => {
         readingListFolderId = folder.id;
-        sendMessage(`Reading List folder created. ID: ${readingListFolderId}`);
       });
     }
   });
@@ -147,9 +142,7 @@ function updateAddonStateForActiveTab(tabs) {
           updateButton();
         });
       } else {
-        console.log(
-          `Bookmark it! does not support the '${currentTab.url}' URL.`
-        );
+        console.log(`The '${currentTab.url}' URL is not supported.`);
       }
     }
   }

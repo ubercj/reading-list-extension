@@ -1,75 +1,134 @@
 const linksContainer = document.getElementById("links-container");
 const newLinkForm = document.getElementById("new-link-form");
-const importForm = document.getElementById("import-form");
-
-const exportActionsContainer = document.getElementById("export-actions");
-const exportButton = document.getElementById("export-button");
+const refreshButton = document.getElementById("refresh");
 
 /**
- * @type {string[]}
+ * @typedef {object} ReadingListLink
+ *
+ * @prop {string} url
+ * @prop {string} [id]
+ * @prop {string} [title]
  */
-let linksList = getLinksFromStorage();
 
-function getLinksFromStorage() {
-  const rawLinks = window.localStorage.getItem("links");
-  return rawLinks ? JSON.parse(rawLinks) : [];
+/**
+ * @type {ReadingListLink[]}
+ */
+let linksList;
+
+async function getReadingListFolder() {
+  return browser.bookmarks.getTree().then((tree) => {
+    const rootTree = tree[0];
+    const otherBookmarksFolder = rootTree.children.find(
+      (child) => child.title === "Other Bookmarks"
+    );
+
+    if (!otherBookmarksFolder) {
+      sendMessage("Could not find expected root folder.");
+      return;
+    }
+
+    const existingReadingListFolder = otherBookmarksFolder.children.find(
+      (child) => child.title === "Reading List"
+    );
+
+    return existingReadingListFolder;
+  });
 }
 
-function setup() {
-  buildReadingList(linksList);
-  setUpListeners();
+/**
+ * @returns {Promise<ReadingListLink[]>}
+ */
+async function getLinksFromFolder(folder) {
+  return folder.children.map((child) => {
+    return {
+      url: child.url,
+      title: child.title,
+      id: child.id,
+    };
+  });
+}
+
+/**
+ * @param {string} message
+ */
+function createErrorMessage(message) {
+  linksContainer.innerHTML = message;
+}
+
+async function setup() {
+  const readingListFolder = await getReadingListFolder();
+
+  if (readingListFolder) {
+    linksList = await getLinksFromFolder(readingListFolder);
+    buildReadingList();
+    setUpListeners();
+  } else {
+    createErrorMessage("An error occurred fetching the reading list.");
+  }
+}
+
+async function refreshList() {
+  const readingListFolder = await getReadingListFolder();
+
+  if (readingListFolder) {
+    const freshLinks = await getLinksFromFolder(readingListFolder);
+    setList(freshLinks);
+  }
 }
 
 function setUpListeners() {
+  refreshButton.addEventListener("click", () => refreshList());
+
   newLinkForm.addEventListener("submit", (event) => {
     event.preventDefault();
 
     const formData = new FormData(event.target);
     const newUrl = formData.get("new-link");
-    addLink(newUrl);
-    console.log("Added " + newUrl + " to reading list.");
-  });
-
-  exportButton.addEventListener("click", (_event) => {
-    exportReadingList();
-  });
-
-  importForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const formData = new FormData(event.target);
-    const newListFile = formData.get("list-import");
-
-    if (newListFile) {
-      importReadingList(newListFile);
-    } else {
-      console.error("No upload file could be found.");
-    }
+    addLink({ url: newUrl });
   });
 }
 
+/**
+ * @param {ReadingListLink[]} newList
+ */
 function setList(newList) {
   linksList = newList;
   window.localStorage.setItem("links", JSON.stringify(linksList));
 
-  buildReadingList(linksList);
+  buildReadingList();
 }
 
+/**
+ * @param {ReadingListLink} newLink
+ */
 function addLink(newLink) {
   linksList.push(newLink);
   window.localStorage.setItem("links", JSON.stringify(linksList));
 
-  buildReadingList(linksList);
+  buildReadingList();
 }
 
+/**
+ * @param {number} index
+ */
 function removeLink(index) {
+  const linkToRemove = linksList.at(index);
+
+  if (linkToRemove.id) {
+    browser.bookmarks.remove(linkToRemove.id);
+  }
+
   linksList.splice(index, 1);
   window.localStorage.setItem("links", JSON.stringify(linksList));
 
   buildReadingList(linksList);
 }
 
-function buildReadingList(list) {
-  if (!list?.length) {
+/**
+ * Constructs the list of links in the DOM
+ */
+function buildReadingList() {
+  if (!linksList?.length) {
     linksContainer.innerHTML = "Your reading list is empty";
     return;
   }
@@ -77,12 +136,12 @@ function buildReadingList(list) {
   const listEl = document.createElement("ul");
   listEl.classList.add("container");
 
-  list.forEach((link, index) => {
+  linksList.forEach((link, index) => {
     const listItemEl = document.createElement("li");
     const linkAnchor = document.createElement("a");
 
-    linkAnchor.href = link;
-    linkAnchor.textContent = link;
+    linkAnchor.href = link.url;
+    linkAnchor.textContent = link.title ?? link.url;
 
     const removeLinkButton = document.createElement("button");
     removeLinkButton.textContent = "Delete";
@@ -98,25 +157,3 @@ function buildReadingList(list) {
 }
 
 document.addEventListener("DOMContentLoaded", setup);
-
-function exportReadingList() {
-  const blob = new Blob([JSON.stringify(linksList)], {
-    type: "application/json",
-  });
-  const downloadUrl = URL.createObjectURL(blob);
-
-  const timestamp = new Date().toISOString();
-  const downloadFilename = `reading-list_${timestamp}.json`;
-
-  const downloadAnchor = document.createElement("a");
-  downloadAnchor.textContent = "Download";
-  downloadAnchor.href = downloadUrl;
-  downloadAnchor.setAttribute("download", downloadFilename);
-
-  exportActionsContainer.appendChild(downloadAnchor);
-}
-
-async function importReadingList(file) {
-  const importedList = await new Response(file).json();
-  setList(importedList);
-}

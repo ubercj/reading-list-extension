@@ -9,6 +9,7 @@
   <body>
     <main>
       <h1>Reading List</h1>
+      <button id="refresh">Refresh List</button>
 
       <div id="links-container" class="container links-container">
         Your reading list is empty.
@@ -20,24 +21,6 @@
           <input id="new-link" type="text" name="new-link" />
           <button>Submit</button>
         </form>
-      </div>
-
-      <div id="actions" class="container actions">
-        <div id="export-actions" class="container">
-          <button id="export-button">Export Reading List</button>
-        </div>
-        <div id="import-actions" class="container">
-          <form id="import-form">
-            <label for="list-import">Import Reading List</label>
-            <input
-              id="list-import"
-              type="file"
-              accept=".json"
-              name="list-import"
-            />
-            <button>Import</button>
-          </form>
-        </div>
       </div>
     </main>
 
