@@ -117,7 +117,7 @@ function setUpListeners() {
 async function setup() {
   try {
     await setUpServices();
-    bookmarkService.getReadingListFolder();
+    await bookmarkService.setReadingListFolder();
     setUpListeners();
 
     // update when the extension loads initially

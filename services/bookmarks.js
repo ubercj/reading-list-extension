@@ -1,8 +1,7 @@
 /**
  * @typedef {object} BookmarkService
  *
- * @prop {() => Promise<void>} getReadingListFolder
- * @prop {() => Promise<void>} createReadingListFolder
+ * @prop {() => Promise<void>} setReadingListFolder
  * @prop {() => Promise<ReadingListLink[]>} getReadingListLinks
  * @prop {(url: string) => Promise<BookmarkTreeNode>} findBookmark
  * @prop {(link: ReadingListLink) => Promise<void>} createBookmark
@@ -43,6 +42,17 @@ export function createBookmarkService() {
       type: "folder",
       title: "Reading List",
     });
+  }
+
+  async function setReadingListFolder() {
+    await getReadingListFolder();
+
+    if (!readingListFolder) {
+      console.log(
+        "Could not find existing Reading List folder. Creating one now."
+      );
+      await createReadingListFolder();
+    }
   }
 
   /**
@@ -94,8 +104,7 @@ export function createBookmarkService() {
   }
 
   return {
-    getReadingListFolder,
-    createReadingListFolder,
+    setReadingListFolder,
     getReadingListLinks,
     findBookmark,
     createBookmark,
