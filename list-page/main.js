@@ -1,6 +1,6 @@
 const linksContainer = document.getElementById("links-container");
-const newLinkForm = document.getElementById("new-link-form");
 const refreshButton = document.getElementById("refresh");
+const newLinkForm = document.getElementById("new-link-form");
 
 /**
  * @typedef {object} ReadingListLink
@@ -85,6 +85,7 @@ function setUpListeners() {
     const formData = new FormData(event.target);
     const newUrl = formData.get("new-link");
     addLink({ url: newUrl });
+    event.target.reset();
   });
 }
 
@@ -93,7 +94,6 @@ function setUpListeners() {
  */
 function setList(newList) {
   linksList = newList;
-  window.localStorage.setItem("links", JSON.stringify(linksList));
 
   buildReadingList();
 }
@@ -101,11 +101,16 @@ function setList(newList) {
 /**
  * @param {ReadingListLink} newLink
  */
-function addLink(newLink) {
+async function addLink(newLink) {
   linksList.push(newLink);
-  window.localStorage.setItem("links", JSON.stringify(linksList));
-
   buildReadingList();
+
+  const readingListFolder = await getReadingListFolder();
+  browser.bookmarks.create({
+    parentId: readingListFolder?.id,
+    title: newLink.title ?? newLink.url,
+    url: newLink.url,
+  });
 }
 
 /**
@@ -117,11 +122,9 @@ function removeLink(index) {
   if (linkToRemove.id) {
     browser.bookmarks.remove(linkToRemove.id);
   }
-
   linksList.splice(index, 1);
-  window.localStorage.setItem("links", JSON.stringify(linksList));
 
-  buildReadingList(linksList);
+  buildReadingList();
 }
 
 /**

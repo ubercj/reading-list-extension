@@ -8,14 +8,19 @@ body {
 }
 
 main {
+  display: grid;
   padding: 2rem;
-  display: flex;
-  flex-direction: column;
   gap: 2rem;
 }
 
 button {
   padding: 0 0.5rem;
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
 }
 
 h1 {
@@ -50,7 +55,6 @@ form {
   margin-block-start: 3rem;
 }
 
-form > button,
-#export-button {
+form > button {
   align-self: flex-start;
 }
