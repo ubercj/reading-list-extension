@@ -5,8 +5,8 @@
   "description": "Add or remove pages to your reading list",
 
   "icons": {
-    "48": "icons/bookmark-it.png",
-    "96": "icons/bookmark-it@2x.png"
+    "48": "icons/bookmark-icon-48_white.png",
+    "96": "icons/bookmark-icon-96_white.png"
   },
 
   "permissions": ["bookmarks", "activeTab", "tabs"],
@@ -14,13 +14,27 @@
   "browser_action": {
     "default_title": "Reading List",
     "default_area": "navbar",
-    "default_icon": "icons/star-empty-38.png",
-    "default_popup": "popup/index.html"
+    "default_popup": "popup/index.html",
+
+    "default_icon": "icons/bookmark-icon-32_white.png",
+    "theme_icons": [
+      {
+        "size": 16,
+        "light": "icons/bookmark-icon-16_white.png",
+        "dark": "icons/bookmark-icon-16_black.png"
+      },
+      {
+        "size": 32,
+        "light": "icons/bookmark-icon-32_white.png",
+        "dark": "icons/bookmark-icon-32_black.png"
+      },
+      {
+        "size": 64,
+        "light": "icons/bookmark-icon-64_white.png",
+        "dark": "icons/bookmark-icon-64_black.png"
+      }
+    ]
   },
 
-  "web_accessible_resources": [
-    "icons/star-filled-19.png",
-    "icons/star-empty-19.png",
-    "services/bookmarks.js"
-  ]
+  "web_accessible_resources": ["icons/*", "services/*"]
 }

@@ -42,8 +42,8 @@ function updateButton() {
   buttonTextSpan.textContent = buttonText;
 
   const iconImage = currentBookmark
-    ? browser.runtime.getURL("icons/star-empty-19.png")
-    : browser.runtime.getURL("icons/star-filled-19.png");
+    ? browser.runtime.getURL("icons/remove-bookmark-icon_24.png")
+    : browser.runtime.getURL("icons/add-bookmark-icon_24.png");
   buttonIcon.src = iconImage;
 }
 
