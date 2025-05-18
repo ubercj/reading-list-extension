@@ -1,8 +1,23 @@
 html,
 body {
-  width: 100px;
+  background-color: #1f1f1f;
+  color: #f9f9f9;
+  width: 200px;
+  font-size: 16px;
 }
 
 .hidden {
   display: none;
+}
+
+#popup-content {
+  display: grid;
+  gap: 8px;
+}
+
+#popup-content button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
 }

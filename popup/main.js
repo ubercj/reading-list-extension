@@ -138,7 +138,11 @@ function updateAddonStateForActiveTab(tabs) {
       if (isSupportedProtocol(currentTab.url)) {
         let searching = browser.bookmarks.search({ url: currentTab.url });
         searching.then((bookmarks) => {
-          currentBookmark = bookmarks[0];
+          bookmarkMatch = bookmarks.find(
+            (bookmark) => bookmark.parentId === readingListFolderId
+          );
+          currentBookmark = bookmarkMatch;
+
           updateButton();
         });
       } else {
