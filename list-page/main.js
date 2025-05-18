@@ -5,9 +5,9 @@ const newLinkForm = document.getElementById("new-link-form");
 /**
  * @typedef {object} ReadingListLink
  *
+ * @prop {string} title
  * @prop {string} url
  * @prop {string} [id]
- * @prop {string} [title]
  */
 
 /**
@@ -53,7 +53,7 @@ function setUpListeners() {
 
     const formData = new FormData(event.target);
     const newUrl = formData.get("new-link");
-    addLink({ url: newUrl });
+    addLink({ title: newUrl, url: newUrl });
     event.target.reset();
   });
 }
@@ -106,7 +106,7 @@ function buildReadingList() {
     const linkAnchor = document.createElement("a");
 
     linkAnchor.href = link.url;
-    linkAnchor.textContent = link.title ?? link.url;
+    linkAnchor.textContent = link.title;
 
     const removeLinkButton = document.createElement("button");
     removeLinkButton.textContent = "Delete";
