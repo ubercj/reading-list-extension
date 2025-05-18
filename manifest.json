@@ -20,6 +20,7 @@
 
   "web_accessible_resources": [
     "icons/star-filled-19.png",
-    "icons/star-empty-19.png"
+    "icons/star-empty-19.png",
+    "services/bookmarks.js"
   ]
 }

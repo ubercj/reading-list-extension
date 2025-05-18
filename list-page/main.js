@@ -15,38 +15,10 @@ const newLinkForm = document.getElementById("new-link-form");
  */
 let linksList;
 
-async function getReadingListFolder() {
-  return browser.bookmarks.getTree().then((tree) => {
-    const rootTree = tree[0];
-    const otherBookmarksFolder = rootTree.children.find(
-      (child) => child.title === "Other Bookmarks"
-    );
-
-    if (!otherBookmarksFolder) {
-      sendMessage("Could not find expected root folder.");
-      return;
-    }
-
-    const existingReadingListFolder = otherBookmarksFolder.children.find(
-      (child) => child.title === "Reading List"
-    );
-
-    return existingReadingListFolder;
-  });
-}
-
 /**
- * @returns {Promise<ReadingListLink[]>}
+ * @type {import("../services/bookmarks").BookmarkService}
  */
-async function getLinksFromFolder(folder) {
-  return folder.children.map((child) => {
-    return {
-      url: child.url,
-      title: child.title,
-      id: child.id,
-    };
-  });
-}
+let bookmarkService;
 
 /**
  * @param {string} message
@@ -56,24 +28,21 @@ function createErrorMessage(message) {
 }
 
 async function setup() {
-  const readingListFolder = await getReadingListFolder();
+  const { createBookmarkService } = await import(
+    browser.runtime.getURL("services/bookmarks.js")
+  );
+  bookmarkService = createBookmarkService();
 
-  if (readingListFolder) {
-    linksList = await getLinksFromFolder(readingListFolder);
-    buildReadingList();
-    setUpListeners();
-  } else {
-    createErrorMessage("An error occurred fetching the reading list.");
-  }
+  linksList = await bookmarkService.getReadingListLinks();
+  buildReadingList();
+  setUpListeners();
+
+  // createErrorMessage("An error occurred fetching the reading list.");
 }
 
 async function refreshList() {
-  const readingListFolder = await getReadingListFolder();
-
-  if (readingListFolder) {
-    const freshLinks = await getLinksFromFolder(readingListFolder);
-    setList(freshLinks);
-  }
+  const freshLinks = await bookmarkService.getReadingListLinks();
+  setList(freshLinks);
 }
 
 function setUpListeners() {
@@ -94,7 +63,6 @@ function setUpListeners() {
  */
 function setList(newList) {
   linksList = newList;
-
   buildReadingList();
 }
 
@@ -104,13 +72,7 @@ function setList(newList) {
 async function addLink(newLink) {
   linksList.push(newLink);
   buildReadingList();
-
-  const readingListFolder = await getReadingListFolder();
-  browser.bookmarks.create({
-    parentId: readingListFolder?.id,
-    title: newLink.title ?? newLink.url,
-    url: newLink.url,
-  });
+  bookmarkService.createBookmark(newLink);
 }
 
 /**
@@ -118,9 +80,8 @@ async function addLink(newLink) {
  */
 function removeLink(index) {
   const linkToRemove = linksList.at(index);
-
-  if (linkToRemove.id) {
-    browser.bookmarks.remove(linkToRemove.id);
+  if (linkToRemove?.id) {
+    bookmarkService.removeBookmark(linkToRemove);
   }
   linksList.splice(index, 1);
 

@@ -1,47 +1,27 @@
-/**
- * Listen for clicks on the buttons, and send the appropriate message to
- * the content script in the page.
- */
+// Grab element references
 const readingListToggleButton = document.getElementById(
   "reading-list-toggle-button"
 );
 const buttonTextSpan = readingListToggleButton.querySelector("span");
 const buttonIcon = document.getElementById("button-icon");
-
 const openReadingListButton = document.getElementById(
   "open-reading-list-button"
 );
 
-function sendMessage(message) {
-  browser.tabs.sendMessage(currentTab.id, {
-    currentTab,
-    message,
-  });
-}
-
-function listenForClicks() {
-  readingListToggleButton.addEventListener("click", (_event) => {
-    toggleBookmark();
-  });
-
-  openReadingListButton.addEventListener("click", (_event) => {
-    browser.tabs.create({
-      url: "/list-page/index.html",
-    });
-  });
-}
+/**
+ * @type {import("../services/bookmarks").BookmarkService}
+ */
+let bookmarkService;
 
 /**
- * There was an error executing the script.
- * Display the popup's error message, and hide the normal UI.
+ * @type {Tab | undefined}
  */
-function reportExecuteScriptError(error) {
-  document.querySelector("#popup-content").classList.add("hidden");
-  document.querySelector("#error-content").classList.remove("hidden");
-  console.error(
-    `Failed to execute reading list content script: ${error.message}`
-  );
-}
+let currentTab;
+
+/**
+ * @type {import("../services/bookmarks").BookmarkTreeNode | undefined}
+ */
+let currentBookmark;
 
 /**
  * When the popup loads, inject a content script into the active tab,
@@ -50,39 +30,7 @@ function reportExecuteScriptError(error) {
  */
 browser.tabs
   .executeScript({ file: "/content_scripts/reading-list-content-script.js" })
-  .then(lookForReadingListFolder)
-  .then(listenForClicks)
-  .catch(reportExecuteScriptError);
-
-function lookForReadingListFolder() {
-  browser.bookmarks.getTree().then((tree) => {
-    const rootTree = tree[0];
-    const otherBookmarksFolder = rootTree.children.find(
-      (child) => child.title === "Other Bookmarks"
-    );
-
-    if (!otherBookmarksFolder) {
-      sendMessage("Could not find expected root folder.");
-      return;
-    }
-
-    const existingReadingListFolder = otherBookmarksFolder.children.find(
-      (child) => child.title === "Reading List"
-    );
-
-    if (existingReadingListFolder) {
-      readingListFolderId = existingReadingListFolder.id;
-    } else {
-      createReadingListFolder().then((folder) => {
-        readingListFolderId = folder.id;
-      });
-    }
-  });
-}
-
-let currentTab;
-let currentBookmark;
-let readingListFolderId;
+  .then(setup);
 
 /*
  * Updates the button text and icon based on whether the current page has already been added to the reading list
@@ -99,32 +47,26 @@ function updateButton() {
   buttonIcon.src = iconImage;
 }
 
-async function createReadingListFolder() {
-  return browser.bookmarks.create({
-    type: "folder",
-    title: "Reading List",
-  });
-}
-
 /*
  * Add or remove the bookmark on the current page.
  */
 function toggleBookmark() {
-  if (currentBookmark) {
-    browser.bookmarks.remove(currentBookmark.id);
+  if (currentBookmark?.id) {
+    bookmarkService.removeBookmark(currentBookmark);
   } else {
-    browser.bookmarks.create({
-      parentId: readingListFolderId,
-      title: currentTab.title,
-      url: currentTab.url,
-    });
+    bookmarkService.createBookmark(currentTab);
   }
 }
 
 /*
  * Switches currentTab and currentBookmark to reflect the currently active tab
  */
-function updateAddonStateForActiveTab(tabs) {
+function updateAddonStateForActiveTab() {
+  if (!bookmarkService) {
+    console.warn("Bookmark Service could not be found.");
+    return;
+  }
+
   function isSupportedProtocol(urlString) {
     let supportedProtocols = ["https:", "http:", "ftp:", "file:"];
     let url = document.createElement("a");
@@ -132,19 +74,12 @@ function updateAddonStateForActiveTab(tabs) {
     return supportedProtocols.indexOf(url.protocol) != -1;
   }
 
-  function updateTab(tabs) {
+  async function updateTab(tabs) {
     if (tabs[0]) {
       currentTab = tabs[0];
       if (isSupportedProtocol(currentTab.url)) {
-        let searching = browser.bookmarks.search({ url: currentTab.url });
-        searching.then((bookmarks) => {
-          bookmarkMatch = bookmarks.find(
-            (bookmark) => bookmark.parentId === readingListFolderId
-          );
-          currentBookmark = bookmarkMatch;
-
-          updateButton();
-        });
+        currentBookmark = await bookmarkService.findBookmark(currentTab.url);
+        updateButton();
       } else {
         console.log(`The '${currentTab.url}' URL is not supported.`);
       }
@@ -156,6 +91,52 @@ function updateAddonStateForActiveTab(tabs) {
 
 async function getCurrentTab() {
   return browser.tabs.query({ active: true, currentWindow: true });
+}
+
+// Set up services and listeners
+
+async function setUpServices() {
+  const { createBookmarkService } = await import(
+    browser.runtime.getURL("services/bookmarks.js")
+  );
+  bookmarkService = createBookmarkService();
+}
+
+function setUpListeners() {
+  readingListToggleButton.addEventListener("click", (_event) => {
+    toggleBookmark();
+  });
+
+  openReadingListButton.addEventListener("click", (_event) => {
+    browser.tabs.create({
+      url: "/list-page/index.html",
+    });
+  });
+}
+
+async function setup() {
+  try {
+    await setUpServices();
+    bookmarkService.getReadingListFolder();
+    setUpListeners();
+
+    // update when the extension loads initially
+    updateAddonStateForActiveTab();
+  } catch (error) {
+    reportExecuteScriptError(error);
+  }
+}
+
+/**
+ * There was an error executing the setup script.
+ * Display the popup's error message, and hide the normal UI.
+ */
+function reportExecuteScriptError(error) {
+  document.querySelector("#popup-content").classList.add("hidden");
+  document.querySelector("#error-content").classList.remove("hidden");
+  console.error(
+    `Failed to execute reading list content script: ${error.message}`
+  );
 }
 
 // listen for bookmarks being created
@@ -173,5 +154,20 @@ browser.tabs.onActivated.addListener(updateAddonStateForActiveTab);
 // listen for window switching
 browser.windows.onFocusChanged.addListener(updateAddonStateForActiveTab);
 
-// update when the extension loads initially
-updateAddonStateForActiveTab();
+function sendMessage(message) {
+  browser.tabs.sendMessage(currentTab.id, {
+    currentTab,
+    message,
+  });
+}
+
+/**
+ * @typedef {object} Tab
+ *
+ * @prop {boolean} active
+ * @prop {integer} [id]
+ * @prop {string} [title]
+ * @prop {string} [url]
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/Tab
+ */
