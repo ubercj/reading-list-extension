@@ -61,7 +61,7 @@ function toggleBookmark() {
 /*
  * Switches currentTab and currentBookmark to reflect the currently active tab
  */
-function updateAddonStateForActiveTab() {
+async function updateAddonStateForActiveTab() {
   if (!bookmarkService) {
     console.warn("Bookmark Service could not be found.");
     return;
@@ -86,7 +86,8 @@ function updateAddonStateForActiveTab() {
     }
   }
 
-  getCurrentTab().then(updateTab);
+  const tabQuery = await getCurrentTab();
+  updateTab(tabQuery);
 }
 
 async function getCurrentTab() {
@@ -117,7 +118,10 @@ function setUpListeners() {
 async function setup() {
   try {
     await setUpServices();
-    await bookmarkService.setReadingListFolder();
+    await Promise.allSettled([
+      bookmarkService.setReadingListFolder(),
+      bookmarkService.setSavedLinksFolder(),
+    ]);
     setUpListeners();
 
     // update when the extension loads initially
