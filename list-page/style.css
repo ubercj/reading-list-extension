@@ -58,3 +58,11 @@ form {
 form > button {
   align-self: flex-start;
 }
+
+summary > h2 {
+  display: inline;
+}
+
+details > .links-container {
+  margin-block-start: 1rem;
+}
