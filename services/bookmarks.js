@@ -1,3 +1,7 @@
+const ROOT_BOOKMARK_FOLDER_TITLE = "Other Bookmarks";
+const READING_LIST_FOLDER_TITLE = "Reading List";
+const SAVED_LINKS_FOLDER_TITLE = "Saved";
+
 /**
  * @typedef {object} BookmarkService
  *
@@ -5,12 +9,11 @@
  * @prop {() => Promise<ReadingListLink[]>} getReadingListLinks
  * @prop {(url: string) => Promise<BookmarkTreeNode>} findBookmark
  * @prop {(link: ReadingListLink) => Promise<void>} createBookmark
+ * @prop {() => Promise<void>} setSavedLinksFolder
+ * @prop {() => Promise<ReadingListLink[]>} getSavedLinks
+ * @prop {(link: ReadingListLink) => Promise<void>} saveLink
  * @prop {(bookmark: BookmarkTreeNode) => Promise<void>} removeBookmark
  */
-
-const ROOT_BOOKMARK_FOLDER_TITLE = "Other Bookmarks";
-const READING_LIST_FOLDER_TITLE = "Reading List";
-const SAVED_LINKS_FOLDER_TITLE = "Saved";
 
 /**
  * @returns {BookmarkService}
@@ -20,6 +23,11 @@ export function createBookmarkService() {
    * @type {BookmarkTreeNode | undefined}
    */
   let readingListFolder;
+
+  /**
+   * @type {BookmarkTreeNode | undefined}
+   */
+  let savedLinksFolder;
 
   async function setReadingListFolder() {
     readingListFolder = await findFolder(READING_LIST_FOLDER_TITLE);
@@ -32,22 +40,33 @@ export function createBookmarkService() {
     }
   }
 
+  async function setSavedLinksFolder() {
+    savedLinksFolder = await findFolder(SAVED_LINKS_FOLDER_TITLE);
+
+    if (!savedLinksFolder) {
+      console.log(
+        "Could not find existing Saved Links folder. Creating one now."
+      );
+      savedLinksFolder = await createFolder(SAVED_LINKS_FOLDER_TITLE);
+    }
+  }
+
   /**
    * @returns {Promise<ReadingListLink[]>}
    */
   async function getReadingListLinks() {
-    // Re-fetch the reading list folder to make sure we have the most current list of bookmarks
+    // Re-fetch the folder to make sure we have the most current list of bookmarks
     await setReadingListFolder();
+    return await getLinksFromFolder(readingListFolder);
+  }
 
-    return (
-      readingListFolder?.children?.map((child) => {
-        return {
-          url: child.url,
-          title: child.title,
-          id: child.id,
-        };
-      }) ?? []
-    );
+  /**
+   * @returns {Promise<ReadingListLink[]>}
+   */
+  async function getSavedLinks() {
+    // Re-fetch the folder to make sure we have the most current list of bookmarks
+    await setSavedLinksFolder();
+    return await getLinksFromFolder(savedLinksFolder);
   }
 
   /**
@@ -65,12 +84,29 @@ export function createBookmarkService() {
 
   /**
    * @param {ReadingListLink} link
+   *
+   * @returns {Promise<BookmarkTreeNode>}
    */
   async function createBookmark({ title, url }) {
-    browser.bookmarks.create({
+    return browser.bookmarks.create({
       parentId: readingListFolder?.id,
       title,
       url,
+    });
+  }
+
+  /**
+   * @param {ReadingListLink} link
+   */
+  async function saveLink({ id, title, url }) {
+    let targetBookmarkId = id;
+    if (!targetBookmarkId) {
+      const newBookmark = await createBookmark({ title, url });
+      targetBookmarkId = newBookmark.id;
+    }
+
+    browser.bookmarks.move(targetBookmarkId, {
+      parentId: savedLinksFolder?.id,
     });
   }
 
@@ -86,6 +122,9 @@ export function createBookmarkService() {
     getReadingListLinks,
     findBookmark,
     createBookmark,
+    setSavedLinksFolder,
+    getSavedLinks,
+    saveLink,
     removeBookmark,
   };
 }
@@ -175,4 +214,21 @@ async function createFolder(title, parentId) {
   };
 
   return await browser.bookmarks.create(newFolder);
+}
+
+/**
+ * @param {BookmarkTreeNode} folder - A folder in which to look for bookmarks
+ *
+ * @returns {Promise<ReadingListLink[]>}
+ */
+async function getLinksFromFolder(folder) {
+  return (
+    folder?.children?.map((child) => {
+      return {
+        url: child.url,
+        title: child.title,
+        id: child.id,
+      };
+    }) ?? []
+  );
 }
