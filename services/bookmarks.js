@@ -78,7 +78,9 @@ export function createBookmarkService() {
     const urlMatches = await browser.bookmarks.search({ url });
 
     return urlMatches.find(
-      (bookmark) => bookmark.parentId === readingListFolder.id
+      (bookmark) =>
+        bookmark.parentId === readingListFolder.id ||
+        bookmark.parentId === savedLinksFolder.id
     );
   }
 
