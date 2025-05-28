@@ -103,7 +103,7 @@ body {
   background: var(--color-dark);
   color: var(--color-light);
   padding: 2em;
-  font-family: sans-serif;
+  font-family: "Readex Pro", sans-serif;
   font-size: var(--size-step-0);
 }
 
@@ -127,7 +127,7 @@ main {
 }
 
 h1, h2, h3 {
-  font-weight: 800;
+  font-weight: 600;
   text-wrap: balance;
   line-height: 1.1;
 }

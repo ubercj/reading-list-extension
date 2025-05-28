@@ -1,22 +1,43 @@
-html,
-body {
-  background-color: #1f1f1f;
-  color: #f9f9f9;
-  width: 200px;
-  font-size: 16px;
+:root {
+  --color-dark: #1f1f1f;
+  --color-light: #f9f9f9;
+  --color-primary: #1a8fe3;
+  --color-secondary: #e0ad2d;
+
+  --size-step-0: 1rem;
+  --size-step-1: 1.25rem;
+  --size-step-2: 1.56rem;
+  --size-step-3: 1.95rem;
+  --size-step-4: 2.43rem;
+
+  --spacer-base: 1em;
+  --spacer-sm: 0.5em;
+  --spacer-xs: 0.25em;
 }
 
+body {
+  background: var(--color-dark);
+  color: var(--color-light);
+  font-family: "Readex Pro", sans-serif;
+  font-size: var(--size-step-0);
+  min-width: 25ch;
+}
 
 #popup-content {
   display: grid;
-  gap: 8px;
+  gap: var(--spacer-base);
 }
 
 #popup-content button {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px;
+  font-family: inherit;
+  gap: var(--spacer-xs);
+  padding: var(--spacer-sm);
+}
+
+#button-icon {
+  min-width: 24px;
 }
 
 .hidden,
