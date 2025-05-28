@@ -4,21 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Reading List</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@160..700&display=swap"
+      rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <main>
+    <main id="main" class="flow">
       <div class="heading">
         <h1>Reading List</h1>
-        <button id="refresh">Refresh List</button>
+        <button id="refresh">Refresh</button>
       </div>
 
+      <h2>Unread</h2>
       <div id="links-container" class="container links-container">
         Your reading list is empty.
       </div>
 
       <div id="add-link-container" class="container add-link">
-        <form id="new-link-form">
+        <form id="new-link-form" class="container">
           <label for="new-link">Add URL</label>
           <input id="new-link" type="text" name="new-link" />
           <button>Submit</button>
@@ -27,7 +33,7 @@
 
       <details>
         <summary><h2>Saved</h2></summary>
-        
+
         <div id="saved-links-container" class="container links-container">
           You haven't saved anything.
         </div>
