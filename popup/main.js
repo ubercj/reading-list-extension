@@ -106,12 +106,14 @@ async function setUpServices() {
 function setUpListeners() {
   readingListToggleButton.addEventListener("click", (_event) => {
     toggleBookmark();
+    window.close();
   });
 
   openReadingListButton.addEventListener("click", (_event) => {
     browser.tabs.create({
       url: "/list-page/index.html",
     });
+    window.close();
   });
 }
 
