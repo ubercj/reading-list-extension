@@ -1,6 +1,5 @@
 const linksContainer = document.getElementById("links-container");
 const savedLinksContainer = document.getElementById("saved-links-container");
-const refreshButton = document.getElementById("refresh");
 const newLinkForm = document.getElementById("new-link-form");
 
 /**
@@ -51,8 +50,6 @@ async function refreshList() {
 }
 
 function setUpListeners() {
-  refreshButton.addEventListener("click", () => refreshList());
-
   newLinkForm.addEventListener("submit", (event) => {
     event.preventDefault();
 
@@ -61,15 +58,49 @@ function setUpListeners() {
     addLink({ title: newUrl, url: newUrl });
     event.target.reset();
   });
+
+  // listen for bookmarks being created
+  browser.bookmarks.onCreated.addListener(() => {
+    console.log("Bookmark created!");
+    refreshList();
+  });
+
+  // listen for bookmarks being updated
+  browser.bookmarks.onChanged.addListener(() => {
+    console.log("Bookmark changed!");
+    refreshList();
+  });
+
+  // listen for bookmarks being moved
+  browser.bookmarks.onMoved.addListener(() => {
+    console.log("Bookmark moved!");
+    refreshList();
+  });
+
+  // listen for bookmarks being removed
+  browser.bookmarks.onRemoved.addListener(() => {
+    console.log("Bookmark removed!");
+    refreshList();
+  });
+
+  // listen to tab switching
+  browser.tabs.onActivated.addListener(() => {
+    console.log("Tab activated!");
+    refreshList();
+  });
+
+  // listen for window switching
+  browser.windows.onFocusChanged.addListener(() => {
+    console.log("Window switched!");
+    refreshList();
+  });
 }
 
 /**
  * @param {ReadingListLink} newLink
  */
 async function addLink(newLink) {
-  readingListLinks.push(newLink);
   bookmarkService.createBookmark(newLink);
-  buildReadingList();
 }
 
 /**
@@ -77,10 +108,6 @@ async function addLink(newLink) {
  */
 async function saveLink(index) {
   const linkToSave = readingListLinks.at(index);
-  savedLinks.push(linkToSave);
-  readingListLinks.splice(index, 1);
-  buildReadingList();
-  buildSavedList();
   bookmarkService.saveLink(linkToSave);
 }
 
@@ -92,9 +119,6 @@ function removeLink(index) {
   if (linkToRemove?.id) {
     bookmarkService.removeBookmark(linkToRemove);
   }
-  readingListLinks.splice(index, 1);
-
-  buildReadingList();
 }
 
 /**
@@ -105,9 +129,6 @@ async function removeSavedLink(index) {
   if (linkToRemove?.id) {
     bookmarkService.removeBookmark(linkToRemove);
   }
-  savedLinks.splice(index, 1);
-
-  buildSavedList();
 }
 
 /**
